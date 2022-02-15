@@ -25,6 +25,7 @@
 #include "stm32f429i_discovery_lcd.h"
 #include "stdio.h"
 #include "i2c_at24c64.h"
+#include "math.h"
 
 /* USER CODE END Includes */
 
@@ -90,6 +91,48 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   }
 }
 
+void LCD_DisplayAnalogClock(uint8_t h, uint8_t m, uint8_t s) {
+
+  BSP_LCD_SetTextColor(LCD_COLOR_LIGHTBLUE);
+  BSP_LCD_FillCircle(120, 220, 41);
+
+  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+  BSP_LCD_DrawCircle(120, 220, 41);
+  BSP_LCD_FillCircle(120, 220, 4);
+
+
+
+  uint16_t x1, x2, y1, y2;
+  float angle;
+  x1 = 120;
+  y1 = 220;
+
+  // hours hand
+  angle = ((h % 12) + m / 60.0 - 3.0) * 2 * M_PI / 12.0;
+  x2 = 120 + (int) (cos(angle) * 24);
+  y2 = 220 + (int) (sin(angle) * 24);
+  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+  BSP_LCD_DrawLine(x1, y1, x2, y2);
+
+  // minutes hand
+  angle = (m + s / 60.0 - 15.0) * 2 * M_PI / 60.0;
+  x2 = 120 + (int) (cos(angle) * 38);
+  y2 = 220 + (int) (sin(angle) * 38);
+  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+  BSP_LCD_DrawLine(x1, y1, x2, y2);
+
+  // seconds hand
+  angle = (s - 15.0) * 2 * M_PI / 60.0;
+  x2 = 120 + (int) (cos(angle) * 38);
+  y2 = 220 + (int) (sin(angle) * 38);
+
+  BSP_LCD_SetTextColor(LCD_COLOR_RED);
+  BSP_LCD_DrawLine(x1, y1, x2, y2);
+
+
+  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+}
+
 
 RTC_DateTypeDef rtcDate;
 RTC_TimeTypeDef rtcTime;
@@ -103,8 +146,10 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   HAL_RTC_GetDate(hrtc, &rtcDate, RTC_FORMAT_BIN);
   char buf[12];
   sprintf(buf, "%2d:%02d:%02d", rtcTime.Hours, rtcTime.Minutes, rtcTime.Seconds);
-  LCD_DisplayString(13, 4, (uint8_t *) buf);
-  HAL_GPIO_TogglePin(GPIOG, GPIO_PIN_13);
+  BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+  LCD_DisplayString(14, 4, (uint8_t *) buf);
+
+  LCD_DisplayAnalogClock(rtcTime.Hours, rtcTime.Minutes, rtcTime.Seconds);
 }
 
 
@@ -236,7 +281,6 @@ int main(void)
 
   LCD_DisplayString(5, 2, (uint8_t *) "MT2TA4 LAB 3");
   LCD_DisplayString(6, 2, (uint8_t *) "Testing EEPROM....");
-  LCD_DisplayString(15, 8, (uint8_t *) "(CubeIDE)");
 
   /* USER CODE END 2 */
 
