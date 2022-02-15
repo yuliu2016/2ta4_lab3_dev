@@ -90,6 +90,24 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   }
 }
 
+
+RTC_DateTypeDef rtcDate;
+RTC_TimeTypeDef rtcTime;
+
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
+{
+
+  // Get the time
+  HAL_RTC_GetTime(hrtc, &rtcTime, RTC_FORMAT_BIN);
+  //https://stackoverflow.com/a/50212103
+  HAL_RTC_GetDate(hrtc, &rtcDate, RTC_FORMAT_BIN);
+  char buf[12];
+  sprintf(buf, "%2d:%02d:%02d", rtcTime.Hours, rtcTime.Minutes, rtcTime.Seconds);
+  LCD_DisplayString(13, 4, (uint8_t *) buf);
+  HAL_GPIO_TogglePin(GPIOG, GPIO_PIN_13);
+}
+
+
 #define COLUMN(x) ((x) * (BSP_LCD_GetFont()->Width))
 #define I2c3_Handle hi2c3
 #define EEPROM_ADDRESS  0xA0
@@ -487,19 +505,19 @@ static void MX_RTC_Init(void)
 
   /** Initialize RTC and set the Time and Date
   */
-  sTime.Hours = 0x0;
-  sTime.Minutes = 0x0;
-  sTime.Seconds = 0x0;
+  sTime.Hours = 0x9;
+  sTime.Minutes = 0x19;
+  sTime.Seconds = 0x29;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
   if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
   {
     Error_Handler();
   }
-  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
-  sDate.Month = RTC_MONTH_JANUARY;
+  sDate.WeekDay = RTC_WEEKDAY_TUESDAY;
+  sDate.Month = RTC_MONTH_MARCH;
   sDate.Date = 0x1;
-  sDate.Year = 0x0;
+  sDate.Year = 0x22;
 
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
   {
@@ -507,13 +525,13 @@ static void MX_RTC_Init(void)
   }
   /** Enable the Alarm A
   */
-  sAlarm.AlarmTime.Hours = 0x0;
-  sAlarm.AlarmTime.Minutes = 0x0;
-  sAlarm.AlarmTime.Seconds = 0x0;
+  sAlarm.AlarmTime.Hours = 0x2;
+  sAlarm.AlarmTime.Minutes = 0x32;
+  sAlarm.AlarmTime.Seconds = 0x48;
   sAlarm.AlarmTime.SubSeconds = 0x0;
   sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+  sAlarm.AlarmMask = RTC_ALARMMASK_ALL;
   sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
   sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
   sAlarm.AlarmDateWeekDay = 0x1;
