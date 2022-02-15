@@ -62,6 +62,9 @@ SDRAM_HandleTypeDef hsdram1;
 
 extern sFONT Font20;
 
+RTC_DateTypeDef rtcDate;
+RTC_TimeTypeDef rtcTime;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -79,6 +82,7 @@ static void MX_RTC_Init(void);
 void LCD_DisplayString(uint16_t line, uint16_t col, uint8_t *ptr);
 void LCD_DisplayInt(uint16_t line, uint16_t col, int n);
 void LCD_DisplayFloat(uint16_t line, uint16_t col, float f, int digits);
+void LCD_DisplayAnalogClock();
 
 /* USER CODE END PFP */
 
@@ -87,55 +91,9 @@ void LCD_DisplayFloat(uint16_t line, uint16_t col, float f, int digits);
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin == KEY_BUTTON_PIN) {
-    LCD_DisplayString(6, 5, (uint8_t *) "push");
+    LCD_DisplayString(3, 5, (uint8_t *) "push");
   }
 }
-
-void LCD_DisplayAnalogClock(uint8_t h, uint8_t m, uint8_t s) {
-
-  BSP_LCD_SetTextColor(LCD_COLOR_LIGHTBLUE);
-  BSP_LCD_FillCircle(120, 220, 41);
-
-  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-  BSP_LCD_DrawCircle(120, 220, 41);
-  BSP_LCD_FillCircle(120, 220, 4);
-
-
-
-  uint16_t x1, x2, y1, y2;
-  float angle;
-  x1 = 120;
-  y1 = 220;
-
-  // hours hand
-  angle = ((h % 12) + m / 60.0 - 3.0) * 2 * M_PI / 12.0;
-  x2 = 120 + (int) (cos(angle) * 24);
-  y2 = 220 + (int) (sin(angle) * 24);
-  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-  BSP_LCD_DrawLine(x1, y1, x2, y2);
-
-  // minutes hand
-  angle = (m + s / 60.0 - 15.0) * 2 * M_PI / 60.0;
-  x2 = 120 + (int) (cos(angle) * 38);
-  y2 = 220 + (int) (sin(angle) * 38);
-  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-  BSP_LCD_DrawLine(x1, y1, x2, y2);
-
-  // seconds hand
-  angle = (s - 15.0) * 2 * M_PI / 60.0;
-  x2 = 120 + (int) (cos(angle) * 38);
-  y2 = 220 + (int) (sin(angle) * 38);
-
-  BSP_LCD_SetTextColor(LCD_COLOR_RED);
-  BSP_LCD_DrawLine(x1, y1, x2, y2);
-
-
-  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-}
-
-
-RTC_DateTypeDef rtcDate;
-RTC_TimeTypeDef rtcTime;
 
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
@@ -149,7 +107,7 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
   LCD_DisplayString(14, 4, (uint8_t *) buf);
 
-  LCD_DisplayAnalogClock(rtcTime.Hours, rtcTime.Minutes, rtcTime.Seconds);
+  LCD_DisplayAnalogClock();
 }
 
 
@@ -779,6 +737,50 @@ void LCD_DisplayFloat(uint16_t line, uint16_t col, float f, int digits)
   char lcd_buffer[15];
   sprintf(lcd_buffer, "%.*f", digits, f);
   LCD_DisplayString(line, col, (uint8_t *) lcd_buffer);
+}
+
+void LCD_DisplayAnalogClock() {
+
+  uint8_t
+      h = rtcTime.Hours,
+      m = rtcTime.Minutes,
+      s = rtcTime.Seconds;
+
+  BSP_LCD_SetTextColor(LCD_COLOR_LIGHTBLUE);
+  BSP_LCD_FillCircle(120, 220, 41);
+
+  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+  BSP_LCD_DrawCircle(120, 220, 41);
+  BSP_LCD_FillCircle(120, 220, 4);
+
+  uint16_t x1, x2, y1, y2;
+  float angle;
+  x1 = 120;
+  y1 = 220;
+
+  // hours hand
+  angle = ((h % 12) + m / 60.0 - 3.0) * 2 * M_PI / 12.0;
+  x2 = 120 + (int) (cos(angle) * 24);
+  y2 = 220 + (int) (sin(angle) * 24);
+  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+  BSP_LCD_DrawLine(x1, y1, x2, y2);
+
+  // minutes hand
+  angle = (m + s / 60.0 - 15.0) * 2 * M_PI / 60.0;
+  x2 = 120 + (int) (cos(angle) * 38);
+  y2 = 220 + (int) (sin(angle) * 38);
+  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
+  BSP_LCD_DrawLine(x1, y1, x2, y2);
+
+  // seconds hand
+  angle = (s - 15.0) * 2 * M_PI / 60.0;
+  x2 = 120 + (int) (cos(angle) * 38);
+  y2 = 220 + (int) (sin(angle) * 38);
+
+  BSP_LCD_SetTextColor(LCD_COLOR_RED);
+  BSP_LCD_DrawLine(x1, y1, x2, y2);
+
+  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
 }
 
 /* USER CODE END 4 */
