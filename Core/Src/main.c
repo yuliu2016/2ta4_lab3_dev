@@ -24,6 +24,7 @@
 
 #include "stm32f429i_discovery_lcd.h"
 #include "stdio.h"
+#include "i2c_at24c64.h"
 
 /* USER CODE END Includes */
 
@@ -84,6 +85,81 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin == KEY_BUTTON_PIN) {
     LCD_DisplayString(6, 5, (uint8_t *) "push");
   }
+}
+
+#define COLUMN(x) ((x) * (BSP_LCD_GetFont()->Width))
+#define I2c3_Handle hi2c3
+#define EEPROM_ADDRESS  0xA0
+
+  //memory location to write to in the device
+#define memLocation 0x000A
+
+void Lab3_TestEEPROM() {
+  //the following variables are for testging I2C_EEPROM
+
+  uint8_t data1 =0x67,  data2=0x68;
+  uint8_t readData=0x00;
+  char AA[34]= "efghijklmnopqstuvefghijklmnopqstuv";
+  uint8_t * bufferdata=(uint8_t *)AA;
+  int i;
+  uint8_t readMatch=1;
+  uint32_t EE_status;
+
+  //*********************Testing I2C EEPROM------------------
+  EE_status = I2C_ByteWrite(&I2c3_Handle, EEPROM_ADDRESS, memLocation, data1);
+  if (EE_status == HAL_OK)
+    LCD_DisplayString(0, 0, (uint8_t*) "w data1 OK");
+  else
+    LCD_DisplayString(0, 0, (uint8_t*) "w data1 failed");
+
+  EE_status = I2C_ByteWrite(&I2c3_Handle, EEPROM_ADDRESS, memLocation + 1,
+      data2);
+  if (EE_status == HAL_OK)
+    LCD_DisplayString(1, 0, (uint8_t*) "w data2 OK");
+  else
+    LCD_DisplayString(1, 0, (uint8_t*) "w data2 failed");
+
+  readData = I2C_ByteRead(&I2c3_Handle, EEPROM_ADDRESS, memLocation);
+  if (data1 == readData) {
+    LCD_DisplayString(3, 0, (uint8_t*) "r data1 success");
+  } else {
+    LCD_DisplayString(3, 0, (uint8_t*) "r data1 mismatch");
+  }
+  LCD_DisplayInt(3, 14, readData);
+
+  readData = I2C_ByteRead(&I2c3_Handle, EEPROM_ADDRESS, memLocation + 1);
+  if (data2 == readData) {
+    LCD_DisplayString(4, 0, (uint8_t*) "r data2 success");
+  } else {
+    LCD_DisplayString(4, 0, (uint8_t*) "r data2 mismatch");
+  }
+  LCD_DisplayInt(4, 14, readData);
+
+  EE_status = I2C_BufferWrite(&I2c3_Handle, EEPROM_ADDRESS, memLocation,
+      bufferdata, 34);
+  if (EE_status == HAL_OK)
+    LCD_DisplayString(6, 0, (uint8_t*) "w buffer OK");
+  else
+    LCD_DisplayString(6, 0, (uint8_t*) "W buffer failed");
+
+  for (i = 0; i <= 33; i++) {
+    readData = I2C_ByteRead(&I2c3_Handle, EEPROM_ADDRESS, memLocation + i);
+    HAL_Delay(5); // just for display effect. for EEPROM read, do not need dalay
+    //BUT :  if here delay longer time, the floowing display will have trouble,???
+
+    BSP_LCD_DisplayChar(COLUMN(i % 16), LINE(8 + 2 * (int )(i / 16)),
+        (char) readData);
+    BSP_LCD_DisplayChar(COLUMN(i % 16), LINE(9 + 2 * (int )(i / 16)),
+        bufferdata[i]);
+    if (bufferdata[i] != readData)
+      readMatch = 0;
+  }
+
+  if (readMatch == 0)
+    LCD_DisplayString(15, 0, (uint8_t*) "r buffer mismatch");
+  else
+    LCD_DisplayString(15, 0, (uint8_t*) "r buffer success");
+  //******************************testing I2C EEPROM*****************************/
 }
 
 /* USER CODE END 0 */
