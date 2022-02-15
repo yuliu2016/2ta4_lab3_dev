@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
 #include "stm32f429i_discovery_lcd.h"
 #include "stdio.h"
 
@@ -54,6 +55,8 @@ UART_HandleTypeDef huart1;
 SDRAM_HandleTypeDef hsdram1;
 
 /* USER CODE BEGIN PV */
+
+extern sFONT Font20;
 
 /* USER CODE END PV */
 
@@ -121,15 +124,21 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  // Initialize the LCD
   BSP_LCD_Init();
-  BSP_LCD_DisplayOff();
   BSP_LCD_LayerDefaultInit(LCD_BACKGROUND_LAYER, LCD_FRAME_BUFFER);
   BSP_LCD_LayerDefaultInit(LCD_FOREGROUND_LAYER, LCD_FRAME_BUFFER);
   BSP_LCD_SelectLayer(LCD_FOREGROUND_LAYER);
   BSP_LCD_DisplayOn();
+
+  // Configure graphics
   BSP_LCD_Clear(LCD_COLOR_WHITE);
   BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-  LCD_DisplayString(5, 2, (uint8_t *) "Hello 2TA4");
+  BSP_LCD_SetFont(&Font20);
+
+  LCD_DisplayString(5, 2, (uint8_t *) "MT2TA4 LAB 3");
+  LCD_DisplayString(6, 2, (uint8_t *) "Testing EEPROM....");
+  LCD_DisplayString(15, 8, (uint8_t *) "(CubeIDE)");
 
   /* USER CODE END 2 */
 
