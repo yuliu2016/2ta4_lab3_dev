@@ -101,6 +101,55 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	}
 }
 
+void Lab3_DisplayTime(int setTimeIndicator, int setTimeFlash) {
+  char buf[4];
+  sprintf(buf, "%2d", rtcTime.Hours);
+
+  if (setTimeIndicator == 1) {
+    if (setTimeFlash) {
+      LCD_DisplayString(14, 4, (uint8_t *) "  ");
+    } else {
+      BSP_LCD_SetTextColor(LCD_COLOR_RED);
+      LCD_DisplayString(14, 4, (uint8_t *) buf);
+    }
+  } else {
+    BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+    LCD_DisplayString(14, 4, (uint8_t *) buf);
+  }
+
+  BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+  LCD_DisplayString(14, 6, (uint8_t *) ":");
+
+  sprintf(buf, "%02d", rtcTime.Minutes);
+  if (setTimeIndicator == 2) {
+    if (setTimeFlash) {
+      LCD_DisplayString(14, 7, (uint8_t *) "  ");
+    } else {
+      BSP_LCD_SetTextColor(LCD_COLOR_RED);
+      LCD_DisplayString(14, 7, (uint8_t *) buf);
+    }
+  } else {
+    BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+    LCD_DisplayString(14, 7, (uint8_t *) buf);
+  }
+
+  BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+  LCD_DisplayString(14, 9, (uint8_t *) ":");
+
+  sprintf(buf, "%02d", rtcTime.Seconds);
+  if (setTimeIndicator == 3) {
+    if (setTimeFlash) {
+      LCD_DisplayString(14, 10, (uint8_t *) "  ");
+    } else {
+      BSP_LCD_SetTextColor(LCD_COLOR_RED);
+      LCD_DisplayString(14, 10, (uint8_t *) buf);
+    }
+  } else {
+    BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+    LCD_DisplayString(14, 10, (uint8_t *) buf);
+  }
+}
+
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
 
@@ -108,11 +157,8 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   HAL_RTC_GetTime(hrtc, &rtcTime, RTC_FORMAT_BIN);
   //https://stackoverflow.com/a/50212103
   HAL_RTC_GetDate(hrtc, &rtcDate, RTC_FORMAT_BIN);
-  char buf[12];
-  sprintf(buf, "%2d:%02d:%02d", rtcTime.Hours, rtcTime.Minutes, rtcTime.Seconds);
-  BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
-  LCD_DisplayString(14, 4, (uint8_t *) buf);
 
+  Lab3_DisplayTime(0, 0);
   LCD_DisplayAnalogClock();
 }
 
@@ -121,11 +167,11 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 #define I2c3_Handle hi2c3
 #define EEPROM_ADDRESS  0xA0
 
-  //memory location to write to in the device
+// Memory location to write to in the device
 #define memLocation 0x000A
 
 void Lab3_TestEEPROM() {
-  //the following variables are for testging I2C_EEPROM
+  // The following variables are for testging I2C_EEPROM
 
   uint8_t data1 =0x67,  data2=0x68;
   uint8_t readData=0x00;
@@ -135,7 +181,7 @@ void Lab3_TestEEPROM() {
   uint8_t readMatch=1;
   uint32_t EE_status;
 
-  //*********************Testing I2C EEPROM------------------
+  // *********************Testing I2C EEPROM------------------
   EE_status = I2C_ByteWrite(&I2c3_Handle, EEPROM_ADDRESS, memLocation, data1);
   if (EE_status == HAL_OK)
     LCD_DisplayString(0, 0, (uint8_t*) "w data1 OK");
@@ -174,8 +220,8 @@ void Lab3_TestEEPROM() {
 
   for (i = 0; i <= 33; i++) {
     readData = I2C_ByteRead(&I2c3_Handle, EEPROM_ADDRESS, memLocation + i);
-    HAL_Delay(5); // just for display effect. for EEPROM read, do not need dalay
-    //BUT :  if here delay longer time, the floowing display will have trouble,???
+    HAL_Delay(5); // Just for display effect. For EEPROM read, do not need dalay
+    // BUT :  if here delay longer time, the floowing display will have trouble,???
 
     BSP_LCD_DisplayChar(COLUMN(i % 16), LINE(8 + 2 * (int )(i / 16)),
         (char) readData);
@@ -189,7 +235,7 @@ void Lab3_TestEEPROM() {
     LCD_DisplayString(15, 0, (uint8_t*) "r buffer mismatch");
   else
     LCD_DisplayString(15, 0, (uint8_t*) "r buffer success");
-  //******************************testing I2C EEPROM*****************************/
+  // ******************************testing I2C EEPROM*****************************/
 }
 
 /* USER CODE END 0 */
