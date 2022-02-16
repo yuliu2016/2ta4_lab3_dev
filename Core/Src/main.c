@@ -65,6 +65,17 @@ extern sFONT Font20;
 RTC_DateTypeDef rtcDate;
 RTC_TimeTypeDef rtcTime;
 
+enum {
+  DISPLAY_PREV_TIMES_OFF,
+  DISPLAY_PREV_TIMES_ON,
+  EDIT_YEAR,
+  EDIT_MONTH,
+  EDIT_DAY,
+  EDIT_HOUR,
+  EDIT_MINUTE,
+  EDIT_SECOND
+} programState;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -89,9 +100,16 @@ void LCD_DisplayAnalogClock();
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+static void Lab3_DisplayDate() {
+  char buf[14];
+  sprintf(buf, "%04d/%02d/%02d", rtcDate.Year, rtcDate.Month, rtcDate.Date);
+  LCD_DisplayString(15, 4, (uint8_t *) buf);
+}
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin == KEY_BUTTON_PIN) {
     LCD_DisplayString(3, 5, (uint8_t *) "push");
+    // Write to the EEPROM
   }
   if (GPIO_Pin == GPIO_PIN_1) {
     LCD_DisplayString(3, 5, (uint8_t *) "ext1");
@@ -152,6 +170,7 @@ void Lab3_DisplayTime(int setTimeIndicator, int setTimeFlash) {
 
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
+  // This alarm runs as every second from an interrupt
 
   // Get the time
   HAL_RTC_GetTime(hrtc, &rtcTime, RTC_FORMAT_BIN);
@@ -159,6 +178,14 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   HAL_RTC_GetDate(hrtc, &rtcDate, RTC_FORMAT_BIN);
 
   Lab3_DisplayTime(0, 0);
+
+  if (HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN)) {
+    Lab3_DisplayDate();
+  } else {
+     // Stop displaying the date on line 15
+     BSP_LCD_ClearStringLine(15);
+  }
+
   LCD_DisplayAnalogClock();
 }
 
