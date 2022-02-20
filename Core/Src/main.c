@@ -66,6 +66,12 @@ extern uint8_t *clock100_ptr;
 RTC_DateTypeDef rtcDate;
 RTC_TimeTypeDef rtcTime;
 
+static const char MONTHS[12][4] ={
+    "Jan", "Feb", "Mar",
+    "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep",
+    "Oct", "Nov", "Dec"};
+
 enum {
   DISPLAY_PREV_TIMES_OFF,
   DISPLAY_PREV_TIMES_ON,
@@ -101,15 +107,24 @@ void LCD_DisplayAnalogClock();
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-static void Lab3_DisplayDate() {
-  char buf[14];
-  sprintf(buf, "%04d/%02d/%02d", rtcDate.Year, rtcDate.Month, rtcDate.Date);
-  LCD_DisplayString(15, 4, (uint8_t *) buf);
+void Lab3_UpdateDateAndTime() {
+  // Get the time
+  HAL_RTC_GetTime(&hrtc, &rtcTime, RTC_FORMAT_BIN);
+  //https://stackoverflow.com/a/50212103
+  HAL_RTC_GetDate(&hrtc, &rtcDate, RTC_FORMAT_BIN);
+}
+
+void Lab3_DisplayDate() {
+  char buf[18];
+  sprintf(buf, "%s %02d,20%02d", MONTHS[rtcDate.Month - 1], rtcDate.Date, rtcDate.Year);
+
+  BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+  LCD_DisplayString(15, 3, (uint8_t *) buf);
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin == KEY_BUTTON_PIN) {
-    LCD_DisplayString(3, 5, (uint8_t *) "push");
+    Lab3_DisplayDate();
     // Write to the EEPROM
   }
   if (GPIO_Pin == GPIO_PIN_1) {
@@ -173,11 +188,7 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
   // This alarm runs as every second from an interrupt
 
-  // Get the time
-  HAL_RTC_GetTime(hrtc, &rtcTime, RTC_FORMAT_BIN);
-  //https://stackoverflow.com/a/50212103
-  HAL_RTC_GetDate(hrtc, &rtcDate, RTC_FORMAT_BIN);
-
+  Lab3_UpdateDateAndTime();
   Lab3_DisplayTime(0, 0);
 
   if (HAL_GPIO_ReadPin(KEY_BUTTON_GPIO_PORT, KEY_BUTTON_PIN)) {
@@ -832,39 +843,40 @@ void LCD_DisplayFloat(uint16_t line, uint16_t col, float f, int digits)
 }
 
 void LCD_DisplayAnalogClock() {
+
+  const uint16_t cx = 120, cy = 220;
+
   uint8_t
       h = rtcTime.Hours,
       m = rtcTime.Minutes,
       s = rtcTime.Seconds;
 
-  BSP_LCD_DrawBitmap(70, 170, clock100_ptr);
+  BSP_LCD_DrawBitmap(cx - 50, cy - 50, clock100_ptr);
 
-  uint16_t x1, x2, y1, y2;
+  uint16_t x2, y2;
   float angle;
-  x1 = 120;
-  y1 = 220;
 
   // hours hand
   angle = ((h % 12) + m / 60.0 - 3.0) * 2 * M_PI / 12.0;
   x2 = 120 + (int) (cos(angle) * 24);
   y2 = 220 + (int) (sin(angle) * 24);
   BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-  BSP_LCD_DrawLine(x1, y1, x2, y2);
+  BSP_LCD_DrawLine(cx, cy, x2, y2);
 
   // minutes hand
   angle = (m + s / 60.0 - 15.0) * 2 * M_PI / 60.0;
-  x2 = 120 + (int) (cos(angle) * 38);
-  y2 = 220 + (int) (sin(angle) * 38);
+  x2 = 120 + (int) (cos(angle) * 36);
+  y2 = 220 + (int) (sin(angle) * 36);
   BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-  BSP_LCD_DrawLine(x1, y1, x2, y2);
+  BSP_LCD_DrawLine(cx, cy, x2, y2);
 
   // seconds hand
   angle = (s - 15.0) * 2 * M_PI / 60.0;
-  x2 = 120 + (int) (cos(angle) * 38);
-  y2 = 220 + (int) (sin(angle) * 38);
+  x2 = 120 + (int) (cos(angle) * 42);
+  y2 = 220 + (int) (sin(angle) * 42);
 
   BSP_LCD_SetTextColor(LCD_COLOR_RED);
-  BSP_LCD_DrawLine(x1, y1, x2, y2);
+  BSP_LCD_DrawLine(cx, cy, x2, y2);
 
   BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
 }
