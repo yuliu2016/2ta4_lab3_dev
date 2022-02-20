@@ -61,6 +61,7 @@ SDRAM_HandleTypeDef hsdram1;
 /* USER CODE BEGIN PV */
 
 extern sFONT Font20;
+extern uint8_t *clock100_ptr;
 
 RTC_DateTypeDef rtcDate;
 RTC_TimeTypeDef rtcTime;
@@ -179,7 +180,7 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 
   Lab3_DisplayTime(0, 0);
 
-  if (HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN)) {
+  if (HAL_GPIO_ReadPin(KEY_BUTTON_GPIO_PORT, KEY_BUTTON_PIN)) {
     Lab3_DisplayDate();
   } else {
      // Stop displaying the date on line 15
@@ -831,18 +832,12 @@ void LCD_DisplayFloat(uint16_t line, uint16_t col, float f, int digits)
 }
 
 void LCD_DisplayAnalogClock() {
-
   uint8_t
       h = rtcTime.Hours,
       m = rtcTime.Minutes,
       s = rtcTime.Seconds;
 
-  BSP_LCD_SetTextColor(LCD_COLOR_LIGHTBLUE);
-  BSP_LCD_FillCircle(120, 220, 41);
-
-  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
-  BSP_LCD_DrawCircle(120, 220, 41);
-  BSP_LCD_FillCircle(120, 220, 4);
+  BSP_LCD_DrawBitmap(70, 170, clock100_ptr);
 
   uint16_t x1, x2, y1, y2;
   float angle;
