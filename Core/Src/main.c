@@ -73,6 +73,7 @@ static const char MONTHS[12][4] ={
     "Oct", "Nov", "Dec"};
 
 enum {
+  INIT_TEST_EEPROM,
   DISPLAY_PREV_TIMES_OFF,
   DISPLAY_PREV_TIMES_ON,
   EDIT_YEAR,
@@ -188,6 +189,11 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
   // This alarm runs as every second from an interrupt
 
+  if (programState == INIT_TEST_EEPROM) {
+    // don't override eeprom text output with clock
+    return;
+  }
+
   Lab3_UpdateDateAndTime();
   Lab3_DisplayTime(0, 0);
 
@@ -210,6 +216,17 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 #define memLocation 0x000A
 
 void Lab3_TestEEPROM() {
+  // Clear the display
+
+  BSP_LCD_SetTextColor(LCD_COLOR_GRAY);
+  LCD_DisplayString(6, 2, (uint8_t *) "Testing EEPROM....");
+
+  HAL_Delay(1000);   //display for 1 second
+
+  BSP_LCD_ClearStringLine(5);
+  BSP_LCD_ClearStringLine(6);
+  BSP_LCD_ClearStringLine(7);
+
   // The following variables are for testging I2C_EEPROM
 
   uint8_t data1 =0x67,  data2=0x68;
@@ -275,6 +292,8 @@ void Lab3_TestEEPROM() {
   else
     LCD_DisplayString(15, 0, (uint8_t*) "r buffer success");
   // ******************************testing I2C EEPROM*****************************/
+
+  HAL_Delay(1000);
 }
 
 /* USER CODE END 0 */
@@ -324,12 +343,19 @@ int main(void)
   BSP_LCD_DisplayOn();
 
   // Configure graphics
-  BSP_LCD_Clear(LCD_COLOR_WHITE);
-  BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
   BSP_LCD_SetFont(&Font20);
 
+  BSP_LCD_Clear(LCD_COLOR_WHITE);
+  BSP_LCD_SetTextColor(LCD_COLOR_DARKMAGENTA);
   LCD_DisplayString(5, 2, (uint8_t *) "MT2TA4 LAB 3");
-  LCD_DisplayString(6, 2, (uint8_t *) "Testing EEPROM....");
+
+  programState = INIT_TEST_EEPROM;
+  Lab3_TestEEPROM();
+
+  programState = DISPLAY_PREV_TIMES_OFF;
+  BSP_LCD_Clear(LCD_COLOR_WHITE);
+  BSP_LCD_SetTextColor(LCD_COLOR_DARKMAGENTA);
+  LCD_DisplayString(5, 2, (uint8_t *) "MT2TA4 LAB 3");
 
   /* USER CODE END 2 */
 
