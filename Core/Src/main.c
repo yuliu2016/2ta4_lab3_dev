@@ -36,6 +36,13 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define COLUMN(x) ((x) * (BSP_LCD_GetFont()->Width))
+#define I2c3_Handle hi2c3
+#define EEPROM_ADDRESS  0xA0
+// Memory location to write to in the device
+#define memLocation 0x000A
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -84,6 +91,11 @@ enum {
   EDIT_SECOND
 } programState;
 
+// Allows keeping track of time continuously
+// This is reset to 000A on power cycle
+// (Also it doesn't track overflow)
+uint16_t eepromPtr = memLocation;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -115,6 +127,32 @@ void Lab3_UpdateDateAndTime() {
   HAL_RTC_GetDate(&hrtc, &rtcDate, RTC_FORMAT_BIN);
 }
 
+uint8_t EEPROM_Read(uint16_t location) {
+  return I2C_ByteRead(&hi2c3, EEPROM_ADDRESS, location);
+}
+
+void EEPROM_Write(uint16_t location, uint8_t data) {
+  I2C_ByteWrite(&hi2c3, EEPROM_ADDRESS, location, data);
+}
+
+void Lab3_StoreTime() {
+  Lab3_UpdateDateAndTime();
+  EEPROM_Write(eepromPtr++, rtcTime.Hours);
+  EEPROM_Write(eepromPtr++, rtcTime.Minutes);
+  EEPROM_Write(eepromPtr++, rtcTime.Seconds);
+  LCD_DisplayString(1, 2, (uint8_t *) "Time stored");
+}
+
+void Lab3_ClearPrevTimesDisplay() {
+  BSP_LCD_ClearStringLine(1);
+  BSP_LCD_ClearStringLine(2);
+  BSP_LCD_ClearStringLine(3);
+}
+
+void Lab3_LoadPrevTimes() {
+
+}
+
 void Lab3_DisplayDate() {
   char buf[18];
   sprintf(buf, "%s %02d,20%02d", MONTHS[rtcDate.Month - 1], rtcDate.Date, rtcDate.Year);
@@ -127,6 +165,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin == KEY_BUTTON_PIN) {
     Lab3_DisplayDate();
     // Write to the EEPROM
+    Lab3_StoreTime();
   }
   if (GPIO_Pin == GPIO_PIN_1) {
     LCD_DisplayString(3, 5, (uint8_t *) "ext1");
@@ -207,13 +246,6 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   LCD_DisplayAnalogClock();
 }
 
-
-#define COLUMN(x) ((x) * (BSP_LCD_GetFont()->Width))
-#define I2c3_Handle hi2c3
-#define EEPROM_ADDRESS  0xA0
-
-// Memory location to write to in the device
-#define memLocation 0x000A
 
 void Lab3_TestEEPROM() {
   // Clear the display
@@ -831,7 +863,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 3, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
