@@ -140,7 +140,8 @@ void Lab3_StoreTime() {
   EEPROM_Write(eepromPtr++, rtcTime.Hours);
   EEPROM_Write(eepromPtr++, rtcTime.Minutes);
   EEPROM_Write(eepromPtr++, rtcTime.Seconds);
-  LCD_DisplayString(1, 2, (uint8_t *) "Time stored");
+  LCD_DisplayString(1, 2, (uint8_t *) "Stored: #");
+  LCD_DisplayInt(1, 11, (eepromPtr - memLocation) / 3);
 }
 
 void Lab3_ClearPrevTimesDisplay() {
@@ -163,8 +164,10 @@ void Lab3_DisplayDate() {
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin == KEY_BUTTON_PIN) {
+    if (programState == INIT_TEST_EEPROM) {
+      return;
+    }
     Lab3_DisplayDate();
-    // Write to the EEPROM
     Lab3_StoreTime();
   }
   if (GPIO_Pin == GPIO_PIN_1) {
@@ -175,17 +178,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	}
 }
 
-void Lab3_DisplayTime(int setTimeIndicator, int setTimeFlash) {
+void Lab3_DisplayTime(int setTimeIndicator) {
   char buf[4];
   sprintf(buf, "%2d", rtcTime.Hours);
 
   if (setTimeIndicator == 1) {
-    if (setTimeFlash) {
-      LCD_DisplayString(14, 4, (uint8_t *) "  ");
-    } else {
-      BSP_LCD_SetTextColor(LCD_COLOR_RED);
-      LCD_DisplayString(14, 4, (uint8_t *) buf);
-    }
+    BSP_LCD_SetTextColor(LCD_COLOR_RED);
+    LCD_DisplayString(14, 4, (uint8_t *) buf);
   } else {
     BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
     LCD_DisplayString(14, 4, (uint8_t *) buf);
@@ -196,12 +195,8 @@ void Lab3_DisplayTime(int setTimeIndicator, int setTimeFlash) {
 
   sprintf(buf, "%02d", rtcTime.Minutes);
   if (setTimeIndicator == 2) {
-    if (setTimeFlash) {
-      LCD_DisplayString(14, 7, (uint8_t *) "  ");
-    } else {
-      BSP_LCD_SetTextColor(LCD_COLOR_RED);
-      LCD_DisplayString(14, 7, (uint8_t *) buf);
-    }
+    BSP_LCD_SetTextColor(LCD_COLOR_RED);
+    LCD_DisplayString(14, 7, (uint8_t *) buf);
   } else {
     BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
     LCD_DisplayString(14, 7, (uint8_t *) buf);
@@ -212,12 +207,8 @@ void Lab3_DisplayTime(int setTimeIndicator, int setTimeFlash) {
 
   sprintf(buf, "%02d", rtcTime.Seconds);
   if (setTimeIndicator == 3) {
-    if (setTimeFlash) {
-      LCD_DisplayString(14, 10, (uint8_t *) "  ");
-    } else {
-      BSP_LCD_SetTextColor(LCD_COLOR_RED);
-      LCD_DisplayString(14, 10, (uint8_t *) buf);
-    }
+    BSP_LCD_SetTextColor(LCD_COLOR_RED);
+    LCD_DisplayString(14, 10, (uint8_t *) buf);
   } else {
     BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
     LCD_DisplayString(14, 10, (uint8_t *) buf);
@@ -234,7 +225,7 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   }
 
   Lab3_UpdateDateAndTime();
-  Lab3_DisplayTime(0, 0);
+  Lab3_DisplayTime(0);
 
   if (HAL_GPIO_ReadPin(KEY_BUTTON_GPIO_PORT, KEY_BUTTON_PIN)) {
     Lab3_DisplayDate();
