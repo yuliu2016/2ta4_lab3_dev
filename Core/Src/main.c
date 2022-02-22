@@ -364,35 +364,47 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (tick - prevBtn2Tick < 400) return;
     prevBtn2Tick = tick;
 
+    BSP_LCD_SetTextColor(LCD_COLOR_RED);
+
     // Button 2 is used for changing the part of date/time being set
     switch (programState) {
       case DISPLAY_PREV_TIMES_OFF: // Fallthrough
       case DISPLAY_PREV_TIMES_ON:
         programState = EDIT_HOUR;
+        Lab3_ClearPrevTimesDisplay();
+        LCD_DisplayString(1, 2, (uint8_t*) "Set Hours  ");
         Lab3_DisplayTime();
         break;
       case EDIT_HOUR:
         programState = EDIT_MINUTE;
+        LCD_DisplayString(1, 2, (uint8_t*) "Set Minutes");
         Lab3_DisplayTime();
         break;
       case EDIT_MINUTE:
         programState = EDIT_SECOND;
+        LCD_DisplayString(1, 2, (uint8_t*) "Set Seconds");
         Lab3_DisplayTime();
         break;
       case EDIT_SECOND:
         programState = EDIT_MONTH;
+        LCD_DisplayString(1, 2, (uint8_t*) "Set Month  ");
+        Lab3_DisplayTime();
         Lab3_DisplayDate();
         break;
       case EDIT_MONTH:
         programState = EDIT_DAY;
+        LCD_DisplayString(1, 2, (uint8_t*) "Set Day    ");
         Lab3_DisplayDate();
         break;
       case EDIT_DAY:
         programState = EDIT_YEAR;
+        LCD_DisplayString(1, 2, (uint8_t*) "Set Year   ");
         Lab3_DisplayDate();
         break;
       case EDIT_YEAR:
         programState = DISPLAY_PREV_TIMES_OFF;
+        BSP_LCD_ClearStringLine(1);
+        BSP_LCD_ClearStringLine(14);
         break;
       default: return;
     }
