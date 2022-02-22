@@ -73,11 +73,19 @@ extern uint8_t *clock100_ptr;
 RTC_DateTypeDef rtcDate;
 RTC_TimeTypeDef rtcTime;
 
-static const char MONTHS[12][4] ={
+static const char MONTHS[12][4] = {
     "Jan", "Feb", "Mar",
     "Apr", "May", "Jun",
     "Jul", "Aug", "Sep",
-    "Oct", "Nov", "Dec"};
+    "Oct", "Nov", "Dec"
+};
+
+static const uint8_t MONTH_DAYS[12] = {
+    31, 28, 31,
+    30, 31, 30,
+    31, 31, 30,
+    31, 30, 31
+};
 
 enum {
   INIT_TEST_EEPROM,
@@ -152,8 +160,8 @@ void Lab3_StoreTime() {
   EEPROM_Write(eepromPtr++, rtcTime.Seconds);
   Lab3_ClearPrevTimesDisplay();
   BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
-  LCD_DisplayString(1, 2, (uint8_t *) "Stored: #");
-  LCD_DisplayInt(1, 11, (eepromPtr - memLocation) / 3);
+  LCD_DisplayString(1, 2, (uint8_t *) "Stored:");
+  LCD_DisplayInt(1, 10, (eepromPtr - memLocation) / 3);
 }
 
 void Lab3_LoadPrevTimes() {
@@ -256,6 +264,30 @@ void Lab3_DisplayTime() {
   LCD_DisplayString(13, 10, (uint8_t *) buf);
 }
 
+uint8_t Lab3_GetNextDate() {
+  // Day is special here because it's 1-indexed, i.e. the first
+  // day is 1, and the max possible is 31. Also, the number of days
+  // changes depending on the month and year.
+
+  uint8_t
+      d = rtcDate.Date,
+      m = rtcDate.Month,
+      y = rtcDate.Year;
+
+  uint8_t max_days = MONTH_DAYS[m - 1];
+
+  // Leap year: check if year is multiple of 4, but exclude 2000
+  if (m == RTC_MONTH_FEBRUARY && (y & 0b11) == 0 && y != 0) {
+    max_days++;
+  }
+
+  if (d >= max_days) {
+    return 1;
+  } else {
+    return d + 1;
+  }
+}
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
   if (programState == INIT_TEST_EEPROM) {
@@ -307,12 +339,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
         HAL_RTC_SetTime(&hrtc, &rtcTime, RTC_FORMAT_BIN);
         break;
       case EDIT_MONTH:
-        rtcDate.Month = (rtcDate.Month + 1) % 12;
+        // Month is 1-indexed, so modulo first, then add
+        rtcDate.Month = rtcDate.Month % 12 + 1;
         Lab3_DisplayDate();
         HAL_RTC_SetDate(&hrtc, &rtcDate, RTC_FORMAT_BIN);
         break;
       case EDIT_DAY:
-        rtcDate.Date = (rtcDate.Date + 1) % 31;
+        rtcDate.Date = Lab3_GetNextDate();
         Lab3_DisplayDate();
         HAL_RTC_SetDate(&hrtc, &rtcDate, RTC_FORMAT_BIN);
         break;
