@@ -83,12 +83,12 @@ enum {
   INIT_TEST_EEPROM,
   DISPLAY_PREV_TIMES_OFF,
   DISPLAY_PREV_TIMES_ON,
-  EDIT_YEAR,
-  EDIT_MONTH,
-  EDIT_DAY,
   EDIT_HOUR,
   EDIT_MINUTE,
-  EDIT_SECOND
+  EDIT_SECOND,
+  EDIT_MONTH,
+  EDIT_DAY,
+  EDIT_YEAR
 } programState;
 
 // Allows keeping track of time continuously
@@ -187,11 +187,69 @@ void Lab3_LoadPrevTimes() {
 }
 
 void Lab3_DisplayDate() {
-  char buf[18];
-  sprintf(buf, "%s %02d,20%02d", MONTHS[rtcDate.Month - 1], rtcDate.Date, rtcDate.Year);
+  char buf[5];
+
+  sprintf(buf, "%s ", MONTHS[rtcDate.Month - 1]);
+  if (programState == EDIT_MONTH) {
+    BSP_LCD_SetTextColor(LCD_COLOR_RED);
+  } else {
+    BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+  }
+  LCD_DisplayString(14, 3, (uint8_t *) buf);
+
+
+  sprintf(buf, "%02d", rtcDate.Date);
+  if (programState == EDIT_MONTH) {
+    BSP_LCD_SetTextColor(LCD_COLOR_RED);
+  } else {
+    BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+  }
+  LCD_DisplayString(14, 7, (uint8_t *) buf);
 
   BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
-  LCD_DisplayString(14, 3, (uint8_t *) buf);
+  LCD_DisplayString(14, 9, (uint8_t *) ",20");
+
+  sprintf(buf, "%02d", rtcDate.Year);
+  if (programState == EDIT_YEAR) {
+     BSP_LCD_SetTextColor(LCD_COLOR_RED);
+   } else {
+     BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+   }
+   LCD_DisplayString(14, 12, (uint8_t *) buf);
+}
+
+void Lab3_DisplayTime() {
+  char buf[4];
+  sprintf(buf, "%2d", rtcTime.Hours);
+
+  if (programState == EDIT_HOUR) {
+    BSP_LCD_SetTextColor(LCD_COLOR_RED);
+  } else {
+    BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+  }
+  LCD_DisplayString(13, 4, (uint8_t *) buf);
+
+  BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+  LCD_DisplayString(13, 6, (uint8_t *) ":");
+
+  sprintf(buf, "%02d", rtcTime.Minutes);
+  if (programState == EDIT_MINUTE) {
+    BSP_LCD_SetTextColor(LCD_COLOR_RED);
+  } else {
+    BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+  }
+  LCD_DisplayString(13, 7, (uint8_t *) buf);
+
+  BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+  LCD_DisplayString(13, 9, (uint8_t *) ":");
+
+  sprintf(buf, "%02d", rtcTime.Seconds);
+  if (programState == EDIT_SECOND) {
+    BSP_LCD_SetTextColor(LCD_COLOR_RED);
+  } else {
+    BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+  }
+  LCD_DisplayString(13, 10, (uint8_t *) buf);
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
@@ -204,9 +262,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
   if (GPIO_Pin == KEY_BUTTON_PIN) {
     Lab3_DisplayDate();
     Lab3_StoreTime();
-    if (programState == DISPLAY_PREV_TIMES_ON) {
-      programState = DISPLAY_PREV_TIMES_OFF;
-    }
+    // Reset the state
+    programState = DISPLAY_PREV_TIMES_OFF;
   }
   if (GPIO_Pin == GPIO_PIN_1) {
     // Button 1 is used to either
@@ -222,17 +279,17 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
         Lab3_ClearPrevTimesDisplay();
         programState = DISPLAY_PREV_TIMES_OFF;
         break;
-      case EDIT_YEAR:
-        break;
-      case EDIT_MONTH:
-        break;
-      case EDIT_DAY:
-        break;
       case EDIT_HOUR:
         break;
       case EDIT_MINUTE:
         break;
       case EDIT_SECOND:
+        break;
+      case EDIT_MONTH:
+        break;
+      case EDIT_DAY:
+        break;
+      case EDIT_YEAR:
         break;
       default: return;
     }
@@ -244,59 +301,30 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
       case DISPLAY_PREV_TIMES_ON:
         programState = EDIT_HOUR;
         break;
-      case EDIT_YEAR:
-        break;
-      case EDIT_MONTH:
-        break;
-      case EDIT_DAY:
-        break;
       case EDIT_HOUR:
+        programState = EDIT_MINUTE;
         break;
       case EDIT_MINUTE:
+        programState = EDIT_SECOND;
         break;
       case EDIT_SECOND:
+        programState = EDIT_MONTH;
+        break;
+      case EDIT_MONTH:
+        programState = EDIT_DAY;
+        break;
+      case EDIT_DAY:
+        programState = EDIT_YEAR;
+        break;
+      case EDIT_YEAR:
+        programState = DISPLAY_PREV_TIMES_OFF;
         break;
       default: return;
     }
+    LCD_DisplayInt(0, 0, programState);
 	}
 }
 
-void Lab3_DisplayTime(int setTimeIndicator) {
-  char buf[4];
-  sprintf(buf, "%2d", rtcTime.Hours);
-
-  if (setTimeIndicator == 1) {
-    BSP_LCD_SetTextColor(LCD_COLOR_RED);
-    LCD_DisplayString(13, 4, (uint8_t *) buf);
-  } else {
-    BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
-    LCD_DisplayString(13, 4, (uint8_t *) buf);
-  }
-
-  BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
-  LCD_DisplayString(13, 6, (uint8_t *) ":");
-
-  sprintf(buf, "%02d", rtcTime.Minutes);
-  if (setTimeIndicator == 2) {
-    BSP_LCD_SetTextColor(LCD_COLOR_RED);
-    LCD_DisplayString(13, 7, (uint8_t *) buf);
-  } else {
-    BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
-    LCD_DisplayString(13, 7, (uint8_t *) buf);
-  }
-
-  BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
-  LCD_DisplayString(13, 9, (uint8_t *) ":");
-
-  sprintf(buf, "%02d", rtcTime.Seconds);
-  if (setTimeIndicator == 3) {
-    BSP_LCD_SetTextColor(LCD_COLOR_RED);
-    LCD_DisplayString(13, 10, (uint8_t *) buf);
-  } else {
-    BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
-    LCD_DisplayString(13, 10, (uint8_t *) buf);
-  }
-}
 
 void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 {
