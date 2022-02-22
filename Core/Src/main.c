@@ -182,7 +182,7 @@ void Lab3_LoadPrevTimes() {
     h = EEPROM_Read(eepromPtr - 3);
     m = EEPROM_Read(eepromPtr - 2);
     s = EEPROM_Read(eepromPtr - 1);
-    sprintf(buf, "%d:%d:%d", h, m, s);
+    sprintf(buf, "%d:%02d:%02d", h, m, s);
     LCD_DisplayString(3, 3, (uint8_t *) buf);
   } else {
     // not recorded
@@ -203,7 +203,7 @@ void Lab3_DisplayDate() {
 
 
   sprintf(buf, "%02d", rtcDate.Date);
-  if (programState == EDIT_MONTH) {
+  if (programState == EDIT_DAY) {
     BSP_LCD_SetTextColor(LCD_COLOR_RED);
   } else {
     BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
@@ -211,15 +211,15 @@ void Lab3_DisplayDate() {
   LCD_DisplayString(14, 7, (uint8_t *) buf);
 
   BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
-  LCD_DisplayString(14, 9, (uint8_t *) ",20");
+  LCD_DisplayString(14, 9, (uint8_t *) ",");
 
-  sprintf(buf, "%02d", rtcDate.Year);
+  sprintf(buf, "20%02d", rtcDate.Year);
   if (programState == EDIT_YEAR) {
      BSP_LCD_SetTextColor(LCD_COLOR_RED);
    } else {
      BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
    }
-   LCD_DisplayString(14, 12, (uint8_t *) buf);
+   LCD_DisplayString(14, 10, (uint8_t *) buf);
 }
 
 void Lab3_DisplayTime() {
@@ -289,17 +289,37 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
         Lab3_ClearPrevTimesDisplay();
         programState = DISPLAY_PREV_TIMES_OFF;
         break;
+
+      // The following cases each increments the respective value by 1
       case EDIT_HOUR:
+        rtcTime.Hours = (rtcTime.Hours + 1) % 24;
+        Lab3_DisplayTime();
+        HAL_RTC_SetTime(&hrtc, &rtcTime, RTC_FORMAT_BIN);
         break;
       case EDIT_MINUTE:
+        rtcTime.Minutes = (rtcTime.Minutes + 1) % 60;
+        Lab3_DisplayTime();
+        HAL_RTC_SetTime(&hrtc, &rtcTime, RTC_FORMAT_BIN);
         break;
       case EDIT_SECOND:
+        rtcTime.Seconds = (rtcTime.Seconds + 1) % 60;
+        Lab3_DisplayTime();
+        HAL_RTC_SetTime(&hrtc, &rtcTime, RTC_FORMAT_BIN);
         break;
       case EDIT_MONTH:
+        rtcDate.Month = (rtcDate.Month + 1) % 12;
+        Lab3_DisplayDate();
+        HAL_RTC_SetDate(&hrtc, &rtcDate, RTC_FORMAT_BIN);
         break;
       case EDIT_DAY:
+        rtcDate.Date = (rtcDate.Date + 1) % 31;
+        Lab3_DisplayDate();
+        HAL_RTC_SetDate(&hrtc, &rtcDate, RTC_FORMAT_BIN);
         break;
       case EDIT_YEAR:
+        rtcDate.Year = (rtcDate.Year + 1) % 100;
+        Lab3_DisplayDate();
+        HAL_RTC_SetDate(&hrtc, &rtcDate, RTC_FORMAT_BIN);
         break;
       default: return;
     }
@@ -311,34 +331,38 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (tick - prevBtn2Tick < 400) return;
     prevBtn2Tick = tick;
 
-
     // Button 2 is used for changing the part of date/time being set
     switch (programState) {
       case DISPLAY_PREV_TIMES_OFF: // Fallthrough
       case DISPLAY_PREV_TIMES_ON:
         programState = EDIT_HOUR;
+        Lab3_DisplayTime();
         break;
       case EDIT_HOUR:
         programState = EDIT_MINUTE;
+        Lab3_DisplayTime();
         break;
       case EDIT_MINUTE:
         programState = EDIT_SECOND;
+        Lab3_DisplayTime();
         break;
       case EDIT_SECOND:
         programState = EDIT_MONTH;
+        Lab3_DisplayDate();
         break;
       case EDIT_MONTH:
         programState = EDIT_DAY;
+        Lab3_DisplayDate();
         break;
       case EDIT_DAY:
         programState = EDIT_YEAR;
+        Lab3_DisplayDate();
         break;
       case EDIT_YEAR:
         programState = DISPLAY_PREV_TIMES_OFF;
         break;
       default: return;
     }
-    LCD_DisplayInt(0, 0, programState);
 	}
 }
 
@@ -355,11 +379,13 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
   Lab3_UpdateDateAndTime();
   Lab3_DisplayTime(0);
 
-  if (HAL_GPIO_ReadPin(KEY_BUTTON_GPIO_PORT, KEY_BUTTON_PIN)) {
-    Lab3_DisplayDate();
-  } else {
-     // Stop displaying the date on line 14
-     BSP_LCD_ClearStringLine(14);
+  if (programState == DISPLAY_PREV_TIMES_OFF) {
+    if (HAL_GPIO_ReadPin(KEY_BUTTON_GPIO_PORT, KEY_BUTTON_PIN)) {
+      Lab3_DisplayDate();
+    } else {
+      // Stop displaying the date on line 14
+      BSP_LCD_ClearStringLine(14);
+    }
   }
 
   LCD_DisplayAnalogClock();
