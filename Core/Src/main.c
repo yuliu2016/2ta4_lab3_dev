@@ -135,23 +135,55 @@ void EEPROM_Write(uint16_t location, uint8_t data) {
   I2C_ByteWrite(&hi2c3, EEPROM_ADDRESS, location, data);
 }
 
-void Lab3_StoreTime() {
-  Lab3_UpdateDateAndTime();
-  EEPROM_Write(eepromPtr++, rtcTime.Hours);
-  EEPROM_Write(eepromPtr++, rtcTime.Minutes);
-  EEPROM_Write(eepromPtr++, rtcTime.Seconds);
-  LCD_DisplayString(1, 2, (uint8_t *) "Stored: #");
-  LCD_DisplayInt(1, 11, (eepromPtr - memLocation) / 3);
-}
-
 void Lab3_ClearPrevTimesDisplay() {
   BSP_LCD_ClearStringLine(1);
   BSP_LCD_ClearStringLine(2);
   BSP_LCD_ClearStringLine(3);
 }
 
+void Lab3_StoreTime() {
+  Lab3_UpdateDateAndTime();
+  EEPROM_Write(eepromPtr++, rtcTime.Hours);
+  EEPROM_Write(eepromPtr++, rtcTime.Minutes);
+  EEPROM_Write(eepromPtr++, rtcTime.Seconds);
+  Lab3_ClearPrevTimesDisplay();
+  BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+  LCD_DisplayString(1, 2, (uint8_t *) "Stored: #");
+  LCD_DisplayInt(1, 11, (eepromPtr - memLocation) / 3);
+}
+
 void Lab3_LoadPrevTimes() {
 
+  Lab3_ClearPrevTimesDisplay();
+  BSP_LCD_SetTextColor(LCD_COLOR_DARKCYAN);
+  LCD_DisplayString(1, 2, (uint8_t *) "Last 2 times:");
+
+  char buf[18];
+  uint8_t h, m, s;
+
+  // second-last time
+  if (eepromPtr - memLocation >= 6) {
+    h = EEPROM_Read(eepromPtr - 6);
+    m = EEPROM_Read(eepromPtr - 5);
+    s = EEPROM_Read(eepromPtr - 4);
+    sprintf(buf, "%d:%02d:%02d", h, m, s);
+    LCD_DisplayString(2, 4, (uint8_t *) buf);
+  } else {
+    // not recorded
+    LCD_DisplayString(2, 4, (uint8_t *) "-------");
+  }
+
+  // last time
+  if (eepromPtr - memLocation >= 3) {
+    h = EEPROM_Read(eepromPtr - 3);
+    m = EEPROM_Read(eepromPtr - 2);
+    s = EEPROM_Read(eepromPtr - 1);
+    sprintf(buf, "%d:%d:%d", h, m, s);
+    LCD_DisplayString(3, 4, (uint8_t *) buf);
+  } else {
+    // not recorded
+    LCD_DisplayString(3, 4, (uint8_t *) "-------");
+  }
 }
 
 void Lab3_DisplayDate() {
@@ -163,18 +195,69 @@ void Lab3_DisplayDate() {
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+
+  if (programState == INIT_TEST_EEPROM) {
+    // Disable all buttons during the EEPROM test state
+    return;
+  }
+
   if (GPIO_Pin == KEY_BUTTON_PIN) {
-    if (programState == INIT_TEST_EEPROM) {
-      return;
-    }
     Lab3_DisplayDate();
     Lab3_StoreTime();
+    if (programState == DISPLAY_PREV_TIMES_ON) {
+      programState = DISPLAY_PREV_TIMES_OFF;
+    }
   }
   if (GPIO_Pin == GPIO_PIN_1) {
-    LCD_DisplayString(3, 5, (uint8_t *) "ext1");
+    // Button 1 is used to either
+    // - Toggle displaying the previous times
+    // - Set the time
+    switch (programState) {
+      case DISPLAY_PREV_TIMES_OFF:
+        // show the last two recorded times
+        Lab3_LoadPrevTimes();
+        programState = DISPLAY_PREV_TIMES_ON;
+        break;
+      case DISPLAY_PREV_TIMES_ON:
+        Lab3_ClearPrevTimesDisplay();
+        programState = DISPLAY_PREV_TIMES_OFF;
+        break;
+      case EDIT_YEAR:
+        break;
+      case EDIT_MONTH:
+        break;
+      case EDIT_DAY:
+        break;
+      case EDIT_HOUR:
+        break;
+      case EDIT_MINUTE:
+        break;
+      case EDIT_SECOND:
+        break;
+      default: return;
+    }
 	}
-	if (GPIO_Pin == GPIO_PIN_2) {
-	  LCD_DisplayString(3, 5, (uint8_t *) "ext2");
+  if (GPIO_Pin == GPIO_PIN_2) {
+    // Button 2 is used for changing the part of date/time being set
+    switch (programState) {
+      case DISPLAY_PREV_TIMES_OFF: // Fallthrough
+      case DISPLAY_PREV_TIMES_ON:
+        programState = EDIT_HOUR;
+        break;
+      case EDIT_YEAR:
+        break;
+      case EDIT_MONTH:
+        break;
+      case EDIT_DAY:
+        break;
+      case EDIT_HOUR:
+        break;
+      case EDIT_MINUTE:
+        break;
+      case EDIT_SECOND:
+        break;
+      default: return;
+    }
 	}
 }
 
