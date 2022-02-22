@@ -96,6 +96,10 @@ enum {
 // (Also it doesn't track overflow)
 uint16_t eepromPtr = memLocation;
 
+// Button software debouncing
+uint32_t prevBtn1Tick = 0;
+uint32_t prevBtn2Tick = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -266,6 +270,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     programState = DISPLAY_PREV_TIMES_OFF;
   }
   if (GPIO_Pin == GPIO_PIN_1) {
+
+    // Debouncing
+    uint32_t tick = HAL_GetTick();
+    if (tick - prevBtn1Tick < 400) return;
+    prevBtn1Tick = tick;
+
     // Button 1 is used to either
     // - Toggle displaying the previous times
     // - Set the time
@@ -295,6 +305,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     }
 	}
   if (GPIO_Pin == GPIO_PIN_2) {
+
+    // Debouncing
+    uint32_t tick = HAL_GetTick();
+    if (tick - prevBtn2Tick < 400) return;
+    prevBtn2Tick = tick;
+
+
     // Button 2 is used for changing the part of date/time being set
     switch (programState) {
       case DISPLAY_PREV_TIMES_OFF: // Fallthrough
