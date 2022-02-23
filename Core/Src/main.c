@@ -114,9 +114,6 @@ void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
 
 
 void Lab3_TestEEPROM() {
-  // Clear the display
-
-  BSP_LCD_SetTextColor(LCD_COLOR_GRAY);
   LCD_DisplayString(6, 2, (uint8_t *) "Testing EEPROM....");
 
   HAL_Delay(1000);   //display for 1 second
@@ -244,8 +241,7 @@ int main(void)
   BSP_LCD_SetFont(&Font20);
 
   BSP_LCD_Clear(LCD_COLOR_WHITE);
-  BSP_LCD_SetTextColor(LCD_COLOR_DARKMAGENTA);
-  LCD_DisplayString(5, 3, (uint8_t *) "MT2TA4 LAB3");
+  LCD_DisplayString(5, 2, (uint8_t *) "MT2TA4 LAB3");
 
   Lab3_TestEEPROM();
 
